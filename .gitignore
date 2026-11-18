@@ -4,3 +4,4 @@ __pycache__/
 
 configs/*.json
 !configs/SP23-BAI-023.json
+.ci-venv/
