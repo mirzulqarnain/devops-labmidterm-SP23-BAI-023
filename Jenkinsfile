@@ -141,15 +141,72 @@ print('Training validation passed:', metrics)
         }
     }
 
-    post {
-        success {
-            echo 'ML CI/CD pipeline completed successfully!'
-            echo 'Docker image pushed and application deployed.'
-        }
+  
+post {
+    success {
+        echo 'ML CI/CD pipeline completed successfully!'
 
-        failure {
-            echo 'ML CI/CD pipeline failed. Check Jenkins console output.'
-        }
+        emailext(
+            subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+Hello,
+
+Your GitHub commit has successfully passed the CI/CD pipeline.
+
+Build Status: SUCCESS
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Commit: ${env.GIT_COMMIT}
+
+Docker image: zulmir/sp23-bai-023-api:latest
+
+Application:
+http://54.206.86.232:8000/health
+
+Metrics:
+http://54.206.86.232:8000/metrics
+
+Build Details:
+${env.BUILD_URL}
+
+Regards,
+Jenkins CI/CD Pipeline
+""",
+            recipientProviders: [
+                [$class: 'DevelopersRecipientProvider']
+            ]
+        )
     }
+
+    failure {
+        echo 'ML CI/CD pipeline failed.'
+
+        emailext(
+            subject: "FAILED: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+            body: """
+Hello,
+
+Your GitHub commit failed during the CI/CD pipeline.
+
+Build Status: FAILURE
+Job: ${env.JOB_NAME}
+Build Number: ${env.BUILD_NUMBER}
+Commit: ${env.GIT_COMMIT}
+
+Please check the Jenkins console output.
+
+Build Details:
+${env.BUILD_URL}
+
+Regards,
+Jenkins CI/CD Pipeline
+""",
+            recipientProviders: [
+                [$class: 'DevelopersRecipientProvider']
+            ]
+        )
+    }
+}
+
 }
 
