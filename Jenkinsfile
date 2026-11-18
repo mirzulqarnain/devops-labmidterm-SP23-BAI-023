@@ -1,3 +1,4 @@
+
 pipeline {
     agent any
 
@@ -10,9 +11,11 @@ pipeline {
     environment {
         IMAGE_NAME = 'sp23-bai-023-api:latest'
         CONTAINER_NAME = 'sp23-bai-023-api'
+        DOCKERHUB_IMAGE = 'zulmir/sp23-bai-023-api:latest'
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 checkout scm
@@ -69,7 +72,33 @@ print('Training validation passed:', metrics)
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME .'
+                sh '''
+                    docker build -t $IMAGE_NAME .
+                '''
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-creds',
+                    usernameVariable: 'DOCKERHUB_USER',
+                    passwordVariable: 'DOCKERHUB_TOKEN'
+                )]) {
+                    sh '''
+                        set +x
+
+                        echo "$DOCKERHUB_TOKEN" | docker login \
+                            -u "$DOCKERHUB_USER" \
+                            --password-stdin
+
+                        docker tag $IMAGE_NAME $DOCKERHUB_IMAGE
+
+                        docker push $DOCKERHUB_IMAGE
+
+                        docker logout
+                    '''
+                }
             }
         }
 
@@ -93,12 +122,15 @@ print('Training validation passed:', metrics)
                 sh '''
                     sleep 5
 
+                    echo "Checking Health Endpoint..."
                     curl --fail http://localhost:8000/health
                     echo ""
 
+                    echo "Checking Metrics Endpoint..."
                     curl --fail http://localhost:8000/metrics
                     echo ""
 
+                    echo "Checking Prediction Endpoint..."
                     curl --fail -X POST http://localhost:8000/predict \
                         -H "Content-Type: application/json" \
                         -d '{"records":[{"basket_volatility":0.5,"stock_gap":0.3,"promotion_load":0.7,"delivery_delay":0.2}]}'
@@ -111,11 +143,13 @@ print('Training validation passed:', metrics)
 
     post {
         success {
-            echo 'ML pipeline completed and application deployed successfully.'
+            echo 'ML CI/CD pipeline completed successfully!'
+            echo 'Docker image pushed and application deployed.'
         }
 
         failure {
-            echo 'ML pipeline failed. Check the Jenkins console output.'
+            echo 'ML CI/CD pipeline failed. Check Jenkins console output.'
         }
     }
 }
+
