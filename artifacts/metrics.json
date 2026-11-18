@@ -1,0 +1,8 @@
+{
+  "student_id": "SP23-BAI-023",
+  "accuracy": 0.813333,
+  "training_rows": 300,
+  "model_version": "7d447d9d1f54",
+  "dataset_sha256": "7d447d9d1f541ecbe3cb64a129e669ea1ab4270cca3d0cf02b32a9826b6ea44c",
+  "git_sha": "local"
+}

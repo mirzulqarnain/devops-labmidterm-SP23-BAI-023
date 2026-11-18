@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.py[cod]
+
+configs/*.json
+!configs/SP23-BAI-023.json
