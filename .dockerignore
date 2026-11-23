@@ -1,0 +1,8 @@
+.git
+.ci-venv
+venv
+__pycache__
+dataset
+configs
+*.pem
+.env*
