@@ -17,6 +17,10 @@ pipeline {
                 script {
                     def revision = checkout scm
                     env.GIT_COMMIT = revision.GIT_COMMIT
+                    env.COMMITTER_EMAIL = sh(
+                        script: 'git show -s --format=%ce HEAD',
+                        returnStdout: true
+                    ).trim()
                 }
                 sh 'test -s dataset/train.csv && git diff --exit-code -- dataset/train.csv'
             }
@@ -66,8 +70,11 @@ pipeline {
     post {
         always {
             archiveArtifacts artifacts: 'artifacts/metrics.json,artifacts/verification.json', allowEmptyArchive: true
-            emailext(
-                to: 'qasimalik@gmail.com',
+            script {
+                def recipient = env.COMMITTER_EMAIL?.trim()
+                if (recipient && recipient ==~ /[^\s<>,;@]+@[^\s<>,;@]+\.[^\s<>,;@]+/) {
+                    emailext(
+                to: recipient,
                 from: 'mirzulqarnain333@gmail.com',
                 subject: "SP23-BAI-023: ${currentBuild.currentResult} build ${env.BUILD_NUMBER}",
                 body: """SP23-BAI-023 automated retraining: ${currentBuild.currentResult}
@@ -78,7 +85,11 @@ Build: ${env.BUILD_URL}
 Dataset digest, row count and independently verified accuracy are attached when available.
 """,
                 attachmentsPattern: 'artifacts/metrics.json,artifacts/verification.json'
-            )
+                    )
+                } else {
+                    echo 'Notification skipped: the checked-out commit has no valid single committer email.'
+                }
+            }
         }
     }
 }
