@@ -14,7 +14,10 @@ pipeline {
     stages {
         stage('Checkout committed data') {
             steps {
-                checkout scm
+                script {
+                    def revision = checkout scm
+                    env.GIT_COMMIT = revision.GIT_COMMIT
+                }
                 sh 'test -s dataset/train.csv && git diff --exit-code -- dataset/train.csv'
             }
         }
